@@ -15,6 +15,7 @@ import {
   contactFullName,
   type ActiviteWithRelations,
   type Contact,
+  type Groupe,
   type NegociationWithRelations,
   type Profile,
   type SocieteWithRelations,
@@ -34,23 +35,24 @@ export function SocieteSheet() {
   const [negociations, setNegociations] = useState<NegociationWithRelations[]>([]);
   const [activites, setActivites] = useState<ActiviteWithRelations[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [groupes, setGroupes] = useState<Groupe[]>([]);
   const [editOpen, setEditOpen] = useState(false);
   const [contactFormOpen, setContactFormOpen] = useState(false);
 
   const load = useCallback(async (societeId: string) => {
     setLoading(true);
     const supabase = createClient();
-    const [{ data: s }, { data: c }, { data: n }, { data: a }, { data: p }] = await Promise.all([
+    const [{ data: s }, { data: c }, { data: n }, { data: a }, { data: p }, { data: g }] = await Promise.all([
       supabase
         .from("societes")
-        .select("*, qui_connait_profile:profiles(id, nom)")
+        .select("*, qui_connait_profile:profiles!qui_connait(id, nom), groupe:groupes(id, nom)")
         .eq("id", societeId)
         .maybeSingle(),
       supabase.from("contacts").select("*").eq("societe_id", societeId).order("nom"),
       supabase
         .from("negociations")
         .select(
-          "*, societe:societes(id, nom), programme:programmes(id, nom), contact:contacts(id, nom, prenom), responsable:profiles(id, nom)",
+          "*, societe:societes(id, nom), programme:programmes(id, nom), contact:contacts(id, nom, prenom), responsable:profiles!responsable_id(id, nom)",
         )
         .eq("societe_id", societeId)
         .order("created_at", { ascending: false }),
@@ -62,12 +64,14 @@ export function SocieteSheet() {
         .eq("societe_id", societeId)
         .order("date_prevue", { ascending: false }),
       supabase.from("profiles").select("*").order("nom"),
+      supabase.from("groupes").select("*").order("nom"),
     ]);
     setSociete((s as unknown as SocieteWithRelations) ?? null);
     setContacts((c ?? []) as Contact[]);
     setNegociations((n ?? []) as unknown as NegociationWithRelations[]);
     setActivites((a ?? []) as unknown as ActiviteWithRelations[]);
     setProfiles((p ?? []) as Profile[]);
+    setGroupes((g ?? []) as Groupe[]);
     setLoading(false);
   }, []);
 
@@ -108,6 +112,9 @@ export function SocieteSheet() {
                 <div className="flex items-start justify-between gap-2 pr-8">
                   <div>
                     <SheetTitle className="text-lg">{societe.nom}</SheetTitle>
+                    {societe.groupe && (
+                      <p className="text-xs text-muted-foreground">Groupe {societe.groupe.nom}</p>
+                    )}
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {societe.statut && <StatutActeurBadge value={societe.statut} />}
                       <QualiteRelationBadge value={societe.qualite_relation} />
@@ -206,6 +213,7 @@ export function SocieteSheet() {
             onOpenChange={setEditOpen}
             societe={societe}
             profiles={profiles}
+            groupes={groupes}
             onSaved={() => load(societe.id)}
           />
           <ContactFormDialog

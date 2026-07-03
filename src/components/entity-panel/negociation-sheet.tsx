@@ -58,7 +58,7 @@ export function NegociationSheet() {
       supabase
         .from("negociations")
         .select(
-          "*, societe:societes(id, nom), programme:programmes(id, nom), contact:contacts(id, nom, prenom), responsable:profiles(id, nom)",
+          "*, societe:societes(id, nom), programme:programmes(id, nom), contact:contacts(id, nom, prenom), responsable:profiles!responsable_id(id, nom)",
         )
         .eq("id", negociationId)
         .maybeSingle(),

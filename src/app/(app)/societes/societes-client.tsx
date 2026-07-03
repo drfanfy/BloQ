@@ -19,17 +19,27 @@ import {
 } from "@/components/ui/alert-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { useEntityPanel } from "@/components/entity-panel/entity-panel-context";
-import type { Profile, SocieteWithRelations } from "@/lib/types/database";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { Groupe, Profile, SocieteWithRelations } from "@/lib/types/database";
 import { getColumns } from "./columns";
 import { SocieteFormDialog } from "./societe-form-dialog";
+
+const ALL_GROUPES_VALUE = "__all__";
 
 interface SocietesClientProps {
   societes: SocieteWithRelations[];
   profiles: Profile[];
+  groupes: Groupe[];
   userId?: string;
 }
 
-export function SocietesClient({ societes, profiles, userId }: SocietesClientProps) {
+export function SocietesClient({ societes, profiles, groupes, userId }: SocietesClientProps) {
   const router = useRouter();
   const { openSociete } = useEntityPanel();
   const [formOpen, setFormOpen] = useState(false);
@@ -37,6 +47,12 @@ export function SocietesClient({ societes, profiles, userId }: SocietesClientPro
   const [editing, setEditing] = useState<SocieteWithRelations | null>(null);
   const [deleting, setDeleting] = useState<SocieteWithRelations | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [groupeFilter, setGroupeFilter] = useState(ALL_GROUPES_VALUE);
+
+  const filteredSocietes =
+    groupeFilter === ALL_GROUPES_VALUE
+      ? societes
+      : societes.filter((societe) => societe.groupe_id === groupeFilter);
 
   function handleAdd() {
     setEditing(null);
@@ -80,16 +96,31 @@ export function SocietesClient({ societes, profiles, userId }: SocietesClientPro
     <>
       <DataTable
         columns={columns}
-        data={societes}
+        data={filteredSocietes}
         searchPlaceholder="Rechercher une société..."
         onRowClick={(societe) => openSociete(societe.id)}
         screenKey="societes"
         userId={userId}
         toolbarActions={
-          <Button size="sm" onClick={handleAdd}>
-            <Plus className="size-4" />
-            Ajouter une société
-          </Button>
+          <>
+            <Select value={groupeFilter} onValueChange={(value) => setGroupeFilter(value ?? ALL_GROUPES_VALUE)}>
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Tous les groupes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_GROUPES_VALUE}>Tous les groupes</SelectItem>
+                {groupes.map((groupe) => (
+                  <SelectItem key={groupe.id} value={groupe.id}>
+                    {groupe.nom}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button size="sm" onClick={handleAdd}>
+              <Plus className="size-4" />
+              Ajouter une société
+            </Button>
+          </>
         }
       />
 
@@ -99,6 +130,7 @@ export function SocietesClient({ societes, profiles, userId }: SocietesClientPro
         onOpenChange={setFormOpen}
         societe={editing}
         profiles={profiles}
+        groupes={groupes}
         onSaved={() => router.refresh()}
       />
 

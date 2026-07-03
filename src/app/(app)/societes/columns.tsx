@@ -60,6 +60,13 @@ export function getColumns(
       meta: { label: "Qui connaît" },
     },
     {
+      id: "groupe",
+      accessorFn: (row) => row.groupe?.nom ?? "",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Groupe" />,
+      cell: ({ row }) => row.original.groupe?.nom || "—",
+      meta: { label: "Groupe" },
+    },
+    {
       id: "actions",
       header: () => <span className="sr-only">Actions</span>,
       enableHiding: false,

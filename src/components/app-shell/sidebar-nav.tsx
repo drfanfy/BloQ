@@ -7,7 +7,9 @@ import {
   Handshake,
   LayoutDashboard,
   ListChecks,
+  Sparkles,
   Users,
+  Users2,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -15,9 +17,11 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/societes", label: "Sociétés", icon: Building2 },
+  { href: "/groupes", label: "Groupes", icon: Users2 },
   { href: "/contacts", label: "Contacts", icon: Users },
   { href: "/negociations", label: "Négociations", icon: Handshake },
   { href: "/activites", label: "Activités", icon: ListChecks },
+  { href: "/nouveautes", label: "Nouveautés", icon: Sparkles },
 ];
 
 export function SidebarNav() {

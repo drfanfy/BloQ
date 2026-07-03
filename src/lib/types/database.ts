@@ -24,7 +24,15 @@ export type TypeActivite =
 
 export type StatutActivite = "a_faire" | "terminee" | "annulee";
 
-export type StatutNegociation = "en_cours" | "reussie" | "echec";
+// "reussie"/"echec" restent valides pour l'historique mais ne sont plus proposés
+// dans le nouveau formulaire de négociation (voir section 8).
+export type StatutNegociation = "en_cours" | "reussie" | "echec" | "archivee" | "validee";
+
+export type ContactPriorite = "elevee" | "moyenne" | "faible";
+
+export type TodoType = "preparation_panier" | "rdv_a_venir" | "evenement_annuel" | "prise_de_contact" | "autre";
+
+export type TodoStatut = "a_faire" | "fait";
 
 export type Profile = {
   id: string;
@@ -32,6 +40,12 @@ export type Profile = {
   email: string;
   direction: Direction;
   is_admin: boolean;
+  created_at: string;
+};
+
+export type Groupe = {
+  id: string;
+  nom: string;
   created_at: string;
 };
 
@@ -44,12 +58,22 @@ export type Societe = {
   commentaires_strategie: string | null;
   qualite_relation: QualiteRelation;
   qui_connait: string | null;
+  groupe_id: string | null;
+  siren: string | null;
+  statut_verification: boolean;
+  strategie_investissement: string | null;
+  strategie_produit: string | null;
+  strategie_financiere: string | null;
+  volumes_production: string | null;
+  process: string | null;
+  created_by: string | null;
   created_at: string;
   updated_at: string;
 };
 
 export type SocieteWithRelations = Societe & {
   qui_connait_profile: Pick<Profile, "id" | "nom"> | null;
+  groupe: Pick<Groupe, "id" | "nom"> | null;
 };
 
 export type Contact = {
@@ -58,15 +82,34 @@ export type Contact = {
   nom: string;
   prenom: string | null;
   fonction: string | null;
-  telephone: string | null;
-  email: string | null;
   date_dernier_echange: string | null;
+  territoire_travail: string | null;
+  strategie: string | null;
+  zone_recherche: string | null;
+  priorite: ContactPriorite | null;
+  tags_regions: string[] | null;
+  created_by: string | null;
   created_at: string;
   updated_at: string;
 };
 
 export type ContactWithRelations = Contact & {
-  societe: Pick<Societe, "id" | "nom"> | null;
+  societe:
+    | (Pick<Societe, "id" | "nom" | "groupe_id"> & { groupe: Pick<Groupe, "id" | "nom"> | null })
+    | null;
+};
+
+export type ContactReferentInterne = {
+  id: string;
+  contact_id: string;
+  profile_id: string;
+  date_debut: string;
+  date_fin: string | null;
+  created_at: string;
+};
+
+export type ContactReferentInterneWithProfile = ContactReferentInterne & {
+  profile: Pick<Profile, "id" | "nom"> | null;
 };
 
 export type Programme = {
@@ -100,6 +143,9 @@ export type Negociation = {
   bloc_ou_decoupe: string | null;
   loyer_exploitation: number | null;
   taux_capitalisation: number | null;
+  nom_operation: string | null;
+  interet: boolean | null;
+  created_by: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -130,6 +176,37 @@ export type ActiviteWithRelations = Activite & {
   contact: Pick<Contact, "id" | "nom" | "prenom"> | null;
   negociation: Pick<Negociation, "id"> | null;
   responsable: Pick<Profile, "id" | "nom"> | null;
+};
+
+export type DocumentRow = {
+  id: string;
+  activite_id: string | null;
+  negociation_id: string | null;
+  societe_id: string | null;
+  nom: string;
+  storage_path: string;
+  type_document: string | null;
+  created_at: string;
+};
+
+export type Todo = {
+  id: string;
+  titre: string;
+  description: string | null;
+  type: TodoType;
+  statut: TodoStatut;
+  date_echeance: string | null;
+  assigne_a: string | null;
+  societe_id: string | null;
+  contact_id: string | null;
+  created_by: string | null;
+  created_at: string;
+};
+
+export type TodoWithRelations = Todo & {
+  assigne: Pick<Profile, "id" | "nom"> | null;
+  societe: Pick<Societe, "id" | "nom"> | null;
+  contact: Pick<Contact, "id" | "nom" | "prenom"> | null;
 };
 
 export const STATUT_ACTEUR_LABELS: Record<StatutActeur, string> = {
@@ -183,6 +260,31 @@ export const STATUT_NEGOCIATION_LABELS: Record<StatutNegociation, string> = {
   en_cours: "En cours",
   reussie: "Réussie",
   echec: "Échec",
+  archivee: "Archivée",
+  validee: "Validée",
+};
+
+// Statuts proposés dans le nouveau formulaire (section 8) — "reussie"/"echec"
+// restent affichables pour l'historique mais ne sont plus des choix de saisie.
+export const STATUT_NEGOCIATION_FORM_OPTIONS: StatutNegociation[] = ["en_cours", "validee", "archivee"];
+
+export const CONTACT_PRIORITE_LABELS: Record<ContactPriorite, string> = {
+  elevee: "Élevée",
+  moyenne: "Moyenne",
+  faible: "Faible",
+};
+
+export const TODO_TYPE_LABELS: Record<TodoType, string> = {
+  preparation_panier: "Préparation panier",
+  rdv_a_venir: "RDV à venir",
+  evenement_annuel: "Événement annuel",
+  prise_de_contact: "Prise de contact",
+  autre: "Autre",
+};
+
+export const TODO_STATUT_LABELS: Record<TodoStatut, string> = {
+  a_faire: "À faire",
+  fait: "Fait",
 };
 
 export function contactFullName(contact: Pick<Contact, "nom" | "prenom">) {

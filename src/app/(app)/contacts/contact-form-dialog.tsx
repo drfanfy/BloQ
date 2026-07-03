@@ -4,10 +4,17 @@ import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
 import { createClient } from "@/lib/supabase/client";
-import type { ContactWithRelations, Societe } from "@/lib/types/database";
+import { useCurrentProfile } from "@/components/auth/current-profile-context";
+import {
+  CONTACT_PRIORITE_LABELS,
+  type ContactPriorite,
+  type ContactWithRelations,
+  type Societe,
+} from "@/lib/types/database";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -30,9 +37,12 @@ type FormState = {
   prenom: string;
   societe_id: string;
   fonction: string;
-  telephone: string;
-  email: string;
   date_dernier_echange: string;
+  territoire_travail: string;
+  strategie: string;
+  zone_recherche: string;
+  priorite: ContactPriorite | "";
+  tags_regions: string;
 };
 
 function toFormState(contact: ContactWithRelations | null, defaultSocieteId?: string): FormState {
@@ -41,9 +51,12 @@ function toFormState(contact: ContactWithRelations | null, defaultSocieteId?: st
     prenom: contact?.prenom ?? "",
     societe_id: contact?.societe_id ?? defaultSocieteId ?? "",
     fonction: contact?.fonction ?? "",
-    telephone: contact?.telephone ?? "",
-    email: contact?.email ?? "",
     date_dernier_echange: contact?.date_dernier_echange ?? "",
+    territoire_travail: contact?.territoire_travail ?? "",
+    strategie: contact?.strategie ?? "",
+    zone_recherche: contact?.zone_recherche ?? "",
+    priorite: contact?.priorite ?? "",
+    tags_regions: contact?.tags_regions?.join(", ") ?? "",
   };
 }
 
@@ -64,6 +77,7 @@ export function ContactFormDialog({
   defaultSocieteId,
   onSaved,
 }: ContactFormDialogProps) {
+  const currentProfile = useCurrentProfile();
   const [form, setForm] = useState<FormState>(() => toFormState(contact, defaultSocieteId));
   const [loading, setLoading] = useState(false);
 
@@ -77,14 +91,21 @@ export function ContactFormDialog({
       prenom: form.prenom || null,
       societe_id: form.societe_id || null,
       fonction: form.fonction || null,
-      telephone: form.telephone || null,
-      email: form.email || null,
       date_dernier_echange: form.date_dernier_echange || null,
+      territoire_travail: form.territoire_travail || null,
+      strategie: form.strategie || null,
+      zone_recherche: form.zone_recherche || null,
+      priorite: form.priorite || null,
+      tags_regions: form.tags_regions
+        ? form.tags_regions.split(",").map((v) => v.trim()).filter(Boolean)
+        : null,
     };
 
     const { error } = contact
       ? await supabase.from("contacts").update(payload).eq("id", contact.id)
-      : await supabase.from("contacts").insert(payload);
+      : await supabase
+          .from("contacts")
+          .insert({ ...payload, created_by: currentProfile?.id ?? null });
 
     setLoading(false);
 
@@ -106,7 +127,7 @@ export function ContactFormDialog({
         <DialogHeader>
           <DialogTitle>{contact ? "Modifier le contact" : "Ajouter un contact"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto pr-1">
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
               <Label htmlFor="prenom">Prénom</Label>
@@ -149,33 +170,73 @@ export function ContactFormDialog({
             </Select>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="fonction">Fonction</Label>
+              <Input
+                id="fonction"
+                value={form.fonction}
+                onChange={(e) => setForm((f) => ({ ...f, fonction: e.target.value }))}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label>Priorité</Label>
+              <Select
+                value={form.priorite || undefined}
+                onValueChange={(value) =>
+                  setForm((f) => ({ ...f, priorite: value as ContactPriorite }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Non définie" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(CONTACT_PRIORITE_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div className="flex flex-col gap-2">
-            <Label htmlFor="fonction">Fonction</Label>
+            <Label htmlFor="territoire_travail">Territoire de travail</Label>
             <Input
-              id="fonction"
-              value={form.fonction}
-              onChange={(e) => setForm((f) => ({ ...f, fonction: e.target.value }))}
+              id="territoire_travail"
+              value={form.territoire_travail}
+              onChange={(e) => setForm((f) => ({ ...f, territoire_travail: e.target.value }))}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="telephone">Téléphone</Label>
-              <Input
-                id="telephone"
-                value={form.telephone}
-                onChange={(e) => setForm((f) => ({ ...f, telephone: e.target.value }))}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-              />
-            </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="zone_recherche">Zone de recherche</Label>
+            <Input
+              id="zone_recherche"
+              value={form.zone_recherche}
+              onChange={(e) => setForm((f) => ({ ...f, zone_recherche: e.target.value }))}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="tags_regions">Tags régions</Label>
+            <Input
+              id="tags_regions"
+              placeholder="ex: PACA, Occitanie"
+              value={form.tags_regions}
+              onChange={(e) => setForm((f) => ({ ...f, tags_regions: e.target.value }))}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="strategie">Stratégie</Label>
+            <Textarea
+              id="strategie"
+              rows={2}
+              value={form.strategie}
+              onChange={(e) => setForm((f) => ({ ...f, strategie: e.target.value }))}
+            />
           </div>
 
           <div className="flex flex-col gap-2">

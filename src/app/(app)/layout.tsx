@@ -6,6 +6,7 @@ import { LogoutButton } from "@/components/app-shell/logout-button";
 import { UserAvatar } from "@/components/app-shell/user-avatar";
 import { EntityPanelProvider } from "@/components/entity-panel/entity-panel-context";
 import { EntityPanels } from "@/components/entity-panel/entity-panels";
+import { CurrentProfileProvider } from "@/components/auth/current-profile-context";
 
 export default async function AppLayout({
   children,
@@ -30,6 +31,7 @@ export default async function AppLayout({
   const displayName = profile?.nom ?? user.email ?? "?";
 
   return (
+    <CurrentProfileProvider profile={profile ?? null}>
     <EntityPanelProvider>
       <div className="flex min-h-full flex-1">
         <aside className="flex w-60 shrink-0 flex-col border-r bg-muted/30">
@@ -60,5 +62,6 @@ export default async function AppLayout({
       </div>
       <EntityPanels />
     </EntityPanelProvider>
+    </CurrentProfileProvider>
   );
 }

@@ -1,11 +1,13 @@
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import {
+  CONTACT_PRIORITE_LABELS,
   QUALITE_RELATION_LABELS,
   STATUT_ACTEUR_LABELS,
   STATUT_ACTIVITE_LABELS,
   STATUT_NEGOCIATION_LABELS,
   TYPE_ACTIVITE_LABELS,
+  type ContactPriorite,
   type QualiteRelation,
   type StatutActeur,
   type StatutActivite,
@@ -62,6 +64,14 @@ const STATUT_NEGOCIATION_TONE: Record<StatutNegociation, Tone> = {
   en_cours: "amber",
   reussie: "green",
   echec: "red",
+  archivee: "slate",
+  validee: "green",
+};
+
+const CONTACT_PRIORITE_TONE: Record<ContactPriorite, Tone> = {
+  elevee: "red",
+  moyenne: "amber",
+  faible: "slate",
 };
 
 const STATUT_ACTIVITE_TONE: Record<StatutActivite, Tone> = {
@@ -98,4 +108,8 @@ export function StatutActiviteBadge({ value }: { value: StatutActivite }) {
 
 export function TypeActiviteBadge({ value }: { value: TypeActivite }) {
   return <ToneBadge tone={TYPE_ACTIVITE_TONE[value]}>{TYPE_ACTIVITE_LABELS[value]}</ToneBadge>;
+}
+
+export function ContactPrioriteBadge({ value }: { value: ContactPriorite }) {
+  return <ToneBadge tone={CONTACT_PRIORITE_TONE[value]}>{CONTACT_PRIORITE_LABELS[value]}</ToneBadge>;
 }

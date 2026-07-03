@@ -17,7 +17,7 @@ export default async function NegociationsPage() {
     supabase
       .from("negociations")
       .select(
-        "*, societe:societes(id, nom), programme:programmes(id, nom), contact:contacts(id, nom, prenom), responsable:profiles(id, nom)",
+        "*, societe:societes(id, nom), programme:programmes(id, nom), contact:contacts(id, nom, prenom), responsable:profiles!responsable_id(id, nom)",
       )
       .order("created_at", { ascending: false }),
     supabase.from("societes").select("id, nom").order("nom", { ascending: true }),

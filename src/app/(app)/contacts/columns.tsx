@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { SocieteLink } from "@/components/entity-panel/entity-link";
+import { ContactPrioriteBadge } from "@/components/status-badge";
 import { contactFullName, type ContactWithRelations } from "@/lib/types/database";
 
 export function getColumns(
@@ -45,16 +46,16 @@ export function getColumns(
       meta: { label: "Fonction" },
     },
     {
-      accessorKey: "telephone",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Téléphone" />,
-      cell: ({ row }) => row.original.telephone || "—",
-      meta: { label: "Téléphone" },
+      accessorKey: "territoire_travail",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Territoire de travail" />,
+      cell: ({ row }) => row.original.territoire_travail || "—",
+      meta: { label: "Territoire de travail" },
     },
     {
-      accessorKey: "email",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Email" />,
-      cell: ({ row }) => row.original.email || "—",
-      meta: { label: "Email" },
+      accessorKey: "priorite",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Priorité" />,
+      cell: ({ row }) => (row.original.priorite ? <ContactPrioriteBadge value={row.original.priorite} /> : "—"),
+      meta: { label: "Priorité" },
     },
     {
       accessorKey: "date_dernier_echange",
