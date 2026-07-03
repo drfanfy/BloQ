@@ -49,7 +49,7 @@ export function EditGuardButton({
         </Button>
       </TooltipTrigger>
       <TooltipContent>
-        Seul{creatorName ? ` ${creatorName}` : ""} peut modifier cette fiche.
+        Seul {creatorName || "le créateur"} peut modifier cette fiche.
       </TooltipContent>
     </Tooltip>
   );

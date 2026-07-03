@@ -59,7 +59,7 @@ export function NegociationSheet() {
       supabase
         .from("negociations")
         .select(
-          "*, societe:societes(id, nom), programme:programmes(id, nom), contact:contacts(id, nom, prenom), responsable:profiles!responsable_id(id, nom)",
+          "*, societe:societes(id, nom), programme:programmes(id, nom), contact:contacts(id, nom, prenom), responsable:profiles!responsable_id(id, nom), created_by_profile:profiles!created_by(id, nom)",
         )
         .eq("id", negociationId)
         .maybeSingle(),
@@ -195,7 +195,11 @@ export function NegociationSheet() {
                       <StatutNegociationBadge value={negociation.statut} />
                     </div>
                   </div>
-                  <EditGuardButton createdBy={negociation.created_by} onClick={() => setEditOpen(true)} />
+                  <EditGuardButton
+                    createdBy={negociation.created_by}
+                    creatorName={negociation.created_by_profile?.nom}
+                    onClick={() => setEditOpen(true)}
+                  />
                 </div>
               </SheetHeader>
 

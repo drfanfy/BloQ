@@ -55,7 +55,9 @@ export function SocieteSheet() {
       await Promise.all([
         supabase
           .from("societes")
-          .select("*, qui_connait_profile:profiles!qui_connait(id, nom), groupe:groupes(id, nom)")
+          .select(
+            "*, qui_connait_profile:profiles!qui_connait(id, nom), groupe:groupes(id, nom), created_by_profile:profiles!created_by(id, nom)",
+          )
           .eq("id", societeId)
           .maybeSingle(),
         supabase.from("contacts").select("*").eq("societe_id", societeId).order("nom"),
@@ -192,7 +194,11 @@ export function SocieteSheet() {
                       <QualiteRelationBadge value={societe.qualite_relation} />
                     </div>
                   </div>
-                  <EditGuardButton createdBy={societe.created_by} onClick={() => setEditOpen(true)} />
+                  <EditGuardButton
+                    createdBy={societe.created_by}
+                    creatorName={societe.created_by_profile?.nom}
+                    onClick={() => setEditOpen(true)}
+                  />
                 </div>
               </SheetHeader>
 

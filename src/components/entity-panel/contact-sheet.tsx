@@ -57,7 +57,9 @@ export function ContactSheet() {
     const [{ data: c }, { data: a }, { data: s }, { data: r }, { data: p }, { data: prog }] = await Promise.all([
       supabase
         .from("contacts")
-        .select("*, societe:societes(id, nom, groupe_id, groupe:groupes(id, nom))")
+        .select(
+          "*, societe:societes(id, nom, groupe_id, groupe:groupes(id, nom)), created_by_profile:profiles!created_by(id, nom)",
+        )
         .eq("id", contactId)
         .maybeSingle(),
       supabase
@@ -190,6 +192,7 @@ export function ContactSheet() {
                   </div>
                   <EditGuardButton
                     createdBy={contact.created_by}
+                    creatorName={contact.created_by_profile?.nom}
                     onClick={() => setEditOpen(true)}
                   />
                 </div>

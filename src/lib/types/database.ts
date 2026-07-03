@@ -74,6 +74,7 @@ export type Societe = {
 export type SocieteWithRelations = Societe & {
   qui_connait_profile: Pick<Profile, "id" | "nom"> | null;
   groupe: Pick<Groupe, "id" | "nom"> | null;
+  created_by_profile?: Pick<Profile, "id" | "nom"> | null;
 };
 
 export type Contact = {
@@ -97,6 +98,7 @@ export type ContactWithRelations = Contact & {
   societe:
     | (Pick<Societe, "id" | "nom" | "groupe_id"> & { groupe: Pick<Groupe, "id" | "nom"> | null })
     | null;
+  created_by_profile?: Pick<Profile, "id" | "nom"> | null;
 };
 
 export type ContactReferentInterne = {
@@ -155,6 +157,7 @@ export type NegociationWithRelations = Negociation & {
   programme: Pick<Programme, "id" | "nom"> | null;
   contact: Pick<Contact, "id" | "nom" | "prenom"> | null;
   responsable: Pick<Profile, "id" | "nom"> | null;
+  created_by_profile?: Pick<Profile, "id" | "nom"> | null;
 };
 
 export type Activite = {
