@@ -1,85 +1,67 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { toast } from "sonner";
 
-import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatutNegociationBadge } from "@/components/status-badge";
-import { SocieteLink } from "@/components/entity-panel/entity-link";
-import { useEntityPanel } from "@/components/entity-panel/entity-panel-context";
-import { ActiviteListItem } from "@/components/entity-panel/activite-list-item";
+import { SocieteLink, ContactLink } from "@/components/entity-panel/entity-link";
 import { ActiviteFormDialog } from "@/app/(app)/activites/activite-form-dialog";
 import { NegociationFormDialog } from "@/app/(app)/negociations/negociation-form-dialog";
 import type {
-  ActiviteWithRelations,
   Contact,
   NegociationWithRelations,
   Profile,
   Programme,
   Societe,
+  TodoWithRelations,
 } from "@/lib/types/database";
+import { TodoWidget } from "./todo-widget";
+import { RemplissageIndicator } from "./remplissage-indicator";
+
+type ContactInactif = {
+  id: string;
+  nom: string;
+  prenom: string | null;
+  societeNom: string | null;
+  derniereActivite: string | null;
+};
 
 interface DashboardClientProps {
-  activitesAFaire: ActiviteWithRelations[];
   dernieresNegociations: NegociationWithRelations[];
   societes: Pick<Societe, "id" | "nom">[];
   contacts: Pick<Contact, "id" | "nom" | "prenom" | "societe_id">[];
   negociations: Pick<NegociationWithRelations, "id" | "societe_id">[];
   profiles: Pick<Profile, "id" | "nom">[];
   programmes: Pick<Programme, "id" | "nom">[];
+  todos: TodoWithRelations[];
+  contactsInactifs: ContactInactif[];
+  remplissage: {
+    contacts30: number;
+    contacts60: number;
+    societes30: number;
+    societes60: number;
+    negociations30: number;
+    negociations60: number;
+  };
 }
 
 export function DashboardClient({
-  activitesAFaire,
   dernieresNegociations,
   societes,
   contacts,
   negociations,
   profiles,
   programmes,
+  todos,
+  contactsInactifs,
+  remplissage,
 }: DashboardClientProps) {
   const router = useRouter();
-  const { openSociete, openContact } = useEntityPanel();
-  const [items, setItems] = useState(activitesAFaire);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [quickNegociationOpen, setQuickNegociationOpen] = useState(false);
-
-  useEffect(() => {
-    setItems(activitesAFaire);
-  }, [activitesAFaire]);
-
-  async function handleToggle(id: string, done: boolean) {
-    const previous = items;
-    if (done) {
-      setItems((prev) => prev.filter((a) => a.id !== id));
-    }
-
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("activites")
-      .update({ statut: done ? "terminee" : "a_faire", date_realisation: done ? new Date().toISOString() : null })
-      .eq("id", id);
-
-    if (error) {
-      toast.error("Échec de la mise à jour.");
-      setItems(previous);
-      return;
-    }
-
-    toast.success("Activité marquée comme terminée.");
-  }
-
-  function handleOpenRelated(activite: ActiviteWithRelations) {
-    if (activite.societe) {
-      openSociete(activite.societe.id);
-    } else if (activite.contact) {
-      openContact(activite.contact.id);
-    }
-  }
 
   return (
     <>
@@ -100,30 +82,27 @@ export function DashboardClient({
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Activités à faire</CardTitle>
+            <CardTitle>Contacts inactifs depuis 180 jours</CardTitle>
           </CardHeader>
           <CardContent>
-            {items.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aucune activité à faire. 🎉</p>
+            {contactsInactifs.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Aucun contact inactif. 🎉</p>
             ) : (
               <div className="flex flex-col divide-y">
-                {items.map((activite) => (
-                  <ActiviteListItem
-                    key={activite.id}
-                    id={activite.id}
-                    type={activite.type}
-                    description={
-                      activite.description ||
-                      activite.societe?.nom ||
-                      (activite.contact ? `${activite.contact.prenom ?? ""} ${activite.contact.nom}`.trim() : null)
-                    }
-                    datePrevue={activite.date_prevue}
-                    done={false}
-                    onToggle={handleToggle}
-                    onClick={
-                      activite.societe || activite.contact ? () => handleOpenRelated(activite) : undefined
-                    }
-                  />
+                {contactsInactifs.map((contact) => (
+                  <div key={contact.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+                    <div className="min-w-0">
+                      <ContactLink id={contact.id} className="block truncate font-medium">
+                        {[contact.prenom, contact.nom].filter(Boolean).join(" ")}
+                      </ContactLink>
+                      <p className="truncate text-muted-foreground">{contact.societeNom || "—"}</p>
+                    </div>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {contact.derniereActivite
+                        ? new Date(contact.derniereActivite).toLocaleDateString("fr-FR")
+                        : "Jamais contacté"}
+                    </span>
+                  </div>
                 ))}
               </div>
             )}
@@ -160,6 +139,11 @@ export function DashboardClient({
             )}
           </CardContent>
         </Card>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <TodoWidget todos={todos} />
+        <RemplissageIndicator remplissage={remplissage} />
       </div>
 
       <ActiviteFormDialog

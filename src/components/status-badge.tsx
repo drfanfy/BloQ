@@ -6,12 +6,14 @@ import {
   STATUT_ACTEUR_LABELS,
   STATUT_ACTIVITE_LABELS,
   STATUT_NEGOCIATION_LABELS,
+  TODO_TYPE_LABELS,
   TYPE_ACTIVITE_LABELS,
   type ContactPriorite,
   type QualiteRelation,
   type StatutActeur,
   type StatutActivite,
   type StatutNegociation,
+  type TodoType,
   type TypeActivite,
 } from "@/lib/types/database";
 
@@ -112,4 +114,16 @@ export function TypeActiviteBadge({ value }: { value: TypeActivite }) {
 
 export function ContactPrioriteBadge({ value }: { value: ContactPriorite }) {
   return <ToneBadge tone={CONTACT_PRIORITE_TONE[value]}>{CONTACT_PRIORITE_LABELS[value]}</ToneBadge>;
+}
+
+const TODO_TYPE_TONE: Record<TodoType, Tone> = {
+  preparation_panier: "violet",
+  rdv_a_venir: "blue",
+  evenement_annuel: "pink",
+  prise_de_contact: "amber",
+  autre: "slate",
+};
+
+export function TodoTypeBadge({ value }: { value: TodoType }) {
+  return <ToneBadge tone={TODO_TYPE_TONE[value]}>{TODO_TYPE_LABELS[value]}</ToneBadge>;
 }
