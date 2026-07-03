@@ -30,17 +30,20 @@ interface SocietesClientProps {
 export function SocietesClient({ societes, profiles }: SocietesClientProps) {
   const router = useRouter();
   const [formOpen, setFormOpen] = useState(false);
+  const [formKey, setFormKey] = useState(0);
   const [editing, setEditing] = useState<SocieteWithRelations | null>(null);
   const [deleting, setDeleting] = useState<SocieteWithRelations | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   function handleAdd() {
     setEditing(null);
+    setFormKey((k) => k + 1);
     setFormOpen(true);
   }
 
   function handleEdit(societe: SocieteWithRelations) {
     setEditing(societe);
+    setFormKey((k) => k + 1);
     setFormOpen(true);
   }
 
@@ -85,6 +88,7 @@ export function SocietesClient({ societes, profiles }: SocietesClientProps) {
       />
 
       <SocieteFormDialog
+        key={formKey}
         open={formOpen}
         onOpenChange={setFormOpen}
         societe={editing}

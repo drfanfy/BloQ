@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
 import { createClient } from "@/lib/supabase/client";
@@ -72,12 +72,6 @@ export function SocieteFormDialog({
 }: SocieteFormDialogProps) {
   const [form, setForm] = useState<FormState>(() => toFormState(societe));
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (open) {
-      setForm(toFormState(societe));
-    }
-  }, [open, societe]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

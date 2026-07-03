@@ -79,12 +79,14 @@ export function DataTable<TData, TValue>({
         <div className="flex items-center gap-2">
           {toolbarActions}
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Settings2 className="size-4" />
-                Colonnes
-              </Button>
-            </DropdownMenuTrigger>
+            <DropdownMenuTrigger
+              render={
+                <Button variant="outline" size="sm">
+                  <Settings2 className="size-4" />
+                  Colonnes
+                </Button>
+              }
+            />
             <DropdownMenuContent align="end">
               {table
                 .getAllColumns()
