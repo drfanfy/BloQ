@@ -87,11 +87,10 @@ export function getColumns(
       meta: { label: "Société" },
     },
     {
-      id: "programme",
-      accessorFn: (row) => row.programme?.nom ?? "",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Programme" />,
-      cell: ({ row }) => row.original.programme?.nom || "—",
-      meta: { label: "Programme" },
+      accessorKey: "nom_operation",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Nom opération" />,
+      cell: ({ row }) => row.original.nom_operation || row.original.programme?.nom || "—",
+      meta: { label: "Nom opération" },
     },
     {
       id: "contact",
@@ -107,10 +106,17 @@ export function getColumns(
       meta: { label: "Statut" },
     },
     {
+      accessorKey: "interet",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Intérêt" />,
+      cell: ({ row }) =>
+        row.original.interet === null ? "—" : row.original.interet ? "Oui" : "Non",
+      meta: { label: "Intérêt" },
+    },
+    {
       accessorKey: "prix_initial_propose",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Prix initial" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Prix proposé" />,
       cell: ({ row }) => formatMoney(row.original.prix_initial_propose),
-      meta: { label: "Prix initial" },
+      meta: { label: "Prix proposé" },
     },
     {
       accessorKey: "prix_final_cpr",

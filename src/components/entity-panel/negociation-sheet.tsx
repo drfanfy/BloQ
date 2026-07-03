@@ -188,7 +188,9 @@ export function NegociationSheet() {
                         {negociation.societe.nom}
                       </button>
                     )}
-                    <SheetTitle className="text-lg">{negociation.programme?.nom || "Négociation"}</SheetTitle>
+                    <SheetTitle className="text-lg">
+                      {negociation.nom_operation || negociation.programme?.nom || "Négociation"}
+                    </SheetTitle>
                     <div className="mt-2">
                       <StatutNegociationBadge value={negociation.statut} />
                     </div>
@@ -208,16 +210,10 @@ export function NegociationSheet() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Prix final CPR</p>
+                    <p className="text-muted-foreground">Intérêt</p>
                     <p className="font-medium">
-                      {negociation.prix_final_cpr
-                        ? currencyFormatter.format(negociation.prix_final_cpr)
-                        : "—"}
+                      {negociation.interet === null ? "—" : negociation.interet ? "Oui" : "Non"}
                     </p>
-                  </div>
-                  <div className="col-span-2">
-                    <p className="text-muted-foreground">Mesures d&apos;accompagnement</p>
-                    <p className="font-medium">{negociation.mesures_accompagnement || "—"}</p>
                   </div>
                   <div className="col-span-2">
                     <p className="text-muted-foreground">Commentaire</p>

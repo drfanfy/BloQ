@@ -242,7 +242,9 @@ export function SocieteSheet() {
                           onClick={() => openNegociation(negociation.id)}
                           className="flex items-center justify-between py-2 text-left text-sm hover:text-primary"
                         >
-                          <span className="font-medium">{negociation.programme?.nom || "Programme"}</span>
+                          <span className="font-medium">
+                            {negociation.nom_operation || negociation.programme?.nom || "Négociation"}
+                          </span>
                           <StatutNegociationBadge value={negociation.statut} />
                         </button>
                       ))}

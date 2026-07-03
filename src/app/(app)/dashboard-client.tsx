@@ -149,7 +149,9 @@ export function DashboardClient({
                       ) : (
                         <p className="truncate font-medium">—</p>
                       )}
-                      <p className="truncate text-muted-foreground">{negociation.programme?.nom || "—"}</p>
+                      <p className="truncate text-muted-foreground">
+                        {negociation.nom_operation || negociation.programme?.nom || "—"}
+                      </p>
                     </div>
                     <StatutNegociationBadge value={negociation.statut} />
                   </div>
