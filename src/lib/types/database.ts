@@ -68,3 +68,9 @@ export const QUALITE_RELATION_LABELS: Record<QualiteRelation, string> = {
   a_reconstruire: "À reconstruire",
   inexistante: "Inexistante",
 };
+
+export const DIRECTION_LABELS: Record<Direction, string> = {
+  developpement: "Développement",
+  programmes: "Programmes",
+  strategie_performance: "Stratégie & performance",
+};

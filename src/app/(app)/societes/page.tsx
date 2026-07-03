@@ -1,17 +1,9 @@
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Profile, SocieteWithRelations } from "@/lib/types/database";
 import { SocietesClient } from "./societes-client";
 
 export default async function SocietesPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
 
   const [{ data: societes, error: societesError }, { data: profiles }] = await Promise.all([
     supabase
