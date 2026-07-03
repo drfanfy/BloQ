@@ -5,6 +5,8 @@ import { toast } from "sonner";
 
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentProfile } from "@/components/auth/current-profile-context";
+import { useEntityPanel } from "@/components/entity-panel/entity-panel-context";
+import { DuplicateWarning } from "@/components/duplicate-warning";
 import {
   CONTACT_PRIORITE_LABELS,
   type ContactPriorite,
@@ -78,6 +80,7 @@ export function ContactFormDialog({
   onSaved,
 }: ContactFormDialogProps) {
   const currentProfile = useCurrentProfile();
+  const { openContact } = useEntityPanel();
   const [form, setForm] = useState<FormState>(() => toFormState(contact, defaultSocieteId));
   const [loading, setLoading] = useState(false);
 
@@ -147,6 +150,17 @@ export function ContactFormDialog({
               />
             </div>
           </div>
+
+          {!contact && (
+            <DuplicateWarning
+              type="contact"
+              nom={form.nom}
+              onOpenExisting={(id) => {
+                onOpenChange(false);
+                openContact(id);
+              }}
+            />
+          )}
 
           <div className="flex flex-col gap-2">
             <Label>Société</Label>

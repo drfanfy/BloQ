@@ -5,6 +5,8 @@ import { toast } from "sonner";
 
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentProfile } from "@/components/auth/current-profile-context";
+import { useEntityPanel } from "@/components/entity-panel/entity-panel-context";
+import { DuplicateWarning } from "@/components/duplicate-warning";
 import {
   QUALITE_RELATION_LABELS,
   STATUT_ACTEUR_LABELS,
@@ -93,6 +95,7 @@ export function SocieteFormDialog({
   onSaved,
 }: SocieteFormDialogProps) {
   const currentProfile = useCurrentProfile();
+  const { openSociete } = useEntityPanel();
   const [form, setForm] = useState<FormState>(() => toFormState(societe));
   const [loading, setLoading] = useState(false);
   const [localGroupes, setLocalGroupes] = useState(groupes);
@@ -190,6 +193,16 @@ export function SocieteFormDialog({
               value={form.nom}
               onChange={(e) => setForm((f) => ({ ...f, nom: e.target.value }))}
             />
+            {!societe && (
+              <DuplicateWarning
+                type="societe"
+                nom={form.nom}
+                onOpenExisting={(id) => {
+                  onOpenChange(false);
+                  openSociete(id);
+                }}
+              />
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
