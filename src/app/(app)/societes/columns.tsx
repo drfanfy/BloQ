@@ -3,7 +3,6 @@
 import { type ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,21 +11,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
-import {
-  QUALITE_RELATION_LABELS,
-  STATUT_ACTEUR_LABELS,
-  type SocieteWithRelations,
-} from "@/lib/types/database";
-
-const QUALITE_RELATION_VARIANT: Record<
-  SocieteWithRelations["qualite_relation"],
-  "default" | "secondary" | "outline" | "destructive"
-> = {
-  bonne: "default",
-  distante: "secondary",
-  a_reconstruire: "outline",
-  inexistante: "destructive",
-};
+import { QualiteRelationBadge, StatutActeurBadge } from "@/components/status-badge";
+import type { SocieteWithRelations } from "@/lib/types/database";
 
 export function getColumns(
   onEdit: (societe: SocieteWithRelations) => void,
@@ -36,6 +22,7 @@ export function getColumns(
     {
       accessorKey: "nom",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Nom" />,
+      cell: ({ row }) => <span className="font-medium">{row.original.nom}</span>,
       meta: { label: "Nom" },
     },
     {
@@ -43,7 +30,7 @@ export function getColumns(
       header: ({ column }) => <DataTableColumnHeader column={column} title="Statut" />,
       cell: ({ row }) => {
         const statut = row.original.statut;
-        return statut ? STATUT_ACTEUR_LABELS[statut] : "—";
+        return statut ? <StatutActeurBadge value={statut} /> : "—";
       },
       meta: { label: "Statut" },
     },
@@ -62,14 +49,7 @@ export function getColumns(
     {
       accessorKey: "qualite_relation",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Qualité relation" />,
-      cell: ({ row }) => {
-        const qualite = row.original.qualite_relation;
-        return (
-          <Badge variant={QUALITE_RELATION_VARIANT[qualite]}>
-            {QUALITE_RELATION_LABELS[qualite]}
-          </Badge>
-        );
-      },
+      cell: ({ row }) => <QualiteRelationBadge value={row.original.qualite_relation} />,
       meta: { label: "Qualité relation" },
     },
     {

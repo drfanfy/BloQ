@@ -19,23 +19,23 @@ import {
 } from "@/components/ui/alert-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { useEntityPanel } from "@/components/entity-panel/entity-panel-context";
-import type { Profile, SocieteWithRelations } from "@/lib/types/database";
+import { contactFullName, type ContactWithRelations, type Societe } from "@/lib/types/database";
 import { getColumns } from "./columns";
-import { SocieteFormDialog } from "./societe-form-dialog";
+import { ContactFormDialog } from "./contact-form-dialog";
 
-interface SocietesClientProps {
-  societes: SocieteWithRelations[];
-  profiles: Profile[];
+interface ContactsClientProps {
+  contacts: ContactWithRelations[];
+  societes: Pick<Societe, "id" | "nom">[];
   userId?: string;
 }
 
-export function SocietesClient({ societes, profiles, userId }: SocietesClientProps) {
+export function ContactsClient({ contacts, societes, userId }: ContactsClientProps) {
   const router = useRouter();
-  const { openSociete } = useEntityPanel();
+  const { openContact } = useEntityPanel();
   const [formOpen, setFormOpen] = useState(false);
   const [formKey, setFormKey] = useState(0);
-  const [editing, setEditing] = useState<SocieteWithRelations | null>(null);
-  const [deleting, setDeleting] = useState<SocieteWithRelations | null>(null);
+  const [editing, setEditing] = useState<ContactWithRelations | null>(null);
+  const [deleting, setDeleting] = useState<ContactWithRelations | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   function handleAdd() {
@@ -44,8 +44,8 @@ export function SocietesClient({ societes, profiles, userId }: SocietesClientPro
     setFormOpen(true);
   }
 
-  function handleEdit(societe: SocieteWithRelations) {
-    setEditing(societe);
+  function handleEdit(contact: ContactWithRelations) {
+    setEditing(contact);
     setFormKey((k) => k + 1);
     setFormOpen(true);
   }
@@ -55,21 +55,16 @@ export function SocietesClient({ societes, profiles, userId }: SocietesClientPro
     setDeleteLoading(true);
 
     const supabase = createClient();
-    const { error } = await supabase.from("societes").delete().eq("id", deleting.id);
+    const { error } = await supabase.from("contacts").delete().eq("id", deleting.id);
 
     setDeleteLoading(false);
 
     if (error) {
-      const isForeignKeyViolation = error.code === "23503";
-      toast.error("Suppression impossible.", {
-        description: isForeignKeyViolation
-          ? "Cette société est liée à des contacts, négociations ou activités existants."
-          : error.message,
-      });
+      toast.error("Suppression impossible.", { description: error.message });
       return;
     }
 
-    toast.success("Société supprimée.");
+    toast.success("Contact supprimé.");
     setDeleting(null);
     router.refresh();
   }
@@ -80,35 +75,35 @@ export function SocietesClient({ societes, profiles, userId }: SocietesClientPro
     <>
       <DataTable
         columns={columns}
-        data={societes}
-        searchPlaceholder="Rechercher une société..."
-        onRowClick={(societe) => openSociete(societe.id)}
-        screenKey="societes"
+        data={contacts}
+        searchPlaceholder="Rechercher un contact..."
+        onRowClick={(contact) => openContact(contact.id)}
+        screenKey="contacts"
         userId={userId}
         toolbarActions={
           <Button size="sm" onClick={handleAdd}>
             <Plus className="size-4" />
-            Ajouter une société
+            Ajouter un contact
           </Button>
         }
       />
 
-      <SocieteFormDialog
+      <ContactFormDialog
         key={formKey}
         open={formOpen}
         onOpenChange={setFormOpen}
-        societe={editing}
-        profiles={profiles}
+        contact={editing}
+        societes={societes}
         onSaved={() => router.refresh()}
       />
 
       <AlertDialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer « {deleting?.nom} » ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action est irréversible.
-            </AlertDialogDescription>
+            <AlertDialogTitle>
+              Supprimer « {deleting ? contactFullName(deleting) : ""} » ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>Cette action est irréversible.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleteLoading}>Annuler</AlertDialogCancel>

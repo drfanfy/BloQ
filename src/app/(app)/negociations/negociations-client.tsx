@@ -19,23 +19,31 @@ import {
 } from "@/components/ui/alert-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { useEntityPanel } from "@/components/entity-panel/entity-panel-context";
-import type { Profile, SocieteWithRelations } from "@/lib/types/database";
+import type { Contact, NegociationWithRelations, Programme, Societe } from "@/lib/types/database";
 import { getColumns } from "./columns";
-import { SocieteFormDialog } from "./societe-form-dialog";
+import { NegociationFormDialog } from "./negociation-form-dialog";
 
-interface SocietesClientProps {
-  societes: SocieteWithRelations[];
-  profiles: Profile[];
+interface NegociationsClientProps {
+  negociations: NegociationWithRelations[];
+  societes: Pick<Societe, "id" | "nom">[];
+  programmes: Pick<Programme, "id" | "nom">[];
+  contacts: Pick<Contact, "id" | "nom" | "prenom" | "societe_id">[];
   userId?: string;
 }
 
-export function SocietesClient({ societes, profiles, userId }: SocietesClientProps) {
+export function NegociationsClient({
+  negociations,
+  societes,
+  programmes,
+  contacts,
+  userId,
+}: NegociationsClientProps) {
   const router = useRouter();
-  const { openSociete } = useEntityPanel();
+  const { openNegociation } = useEntityPanel();
   const [formOpen, setFormOpen] = useState(false);
   const [formKey, setFormKey] = useState(0);
-  const [editing, setEditing] = useState<SocieteWithRelations | null>(null);
-  const [deleting, setDeleting] = useState<SocieteWithRelations | null>(null);
+  const [editing, setEditing] = useState<NegociationWithRelations | null>(null);
+  const [deleting, setDeleting] = useState<NegociationWithRelations | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   function handleAdd() {
@@ -44,8 +52,8 @@ export function SocietesClient({ societes, profiles, userId }: SocietesClientPro
     setFormOpen(true);
   }
 
-  function handleEdit(societe: SocieteWithRelations) {
-    setEditing(societe);
+  function handleEdit(negociation: NegociationWithRelations) {
+    setEditing(negociation);
     setFormKey((k) => k + 1);
     setFormOpen(true);
   }
@@ -55,7 +63,7 @@ export function SocietesClient({ societes, profiles, userId }: SocietesClientPro
     setDeleteLoading(true);
 
     const supabase = createClient();
-    const { error } = await supabase.from("societes").delete().eq("id", deleting.id);
+    const { error } = await supabase.from("negociations").delete().eq("id", deleting.id);
 
     setDeleteLoading(false);
 
@@ -63,13 +71,13 @@ export function SocietesClient({ societes, profiles, userId }: SocietesClientPro
       const isForeignKeyViolation = error.code === "23503";
       toast.error("Suppression impossible.", {
         description: isForeignKeyViolation
-          ? "Cette société est liée à des contacts, négociations ou activités existants."
+          ? "Cette négociation est liée à des activités existantes."
           : error.message,
       });
       return;
     }
 
-    toast.success("Société supprimée.");
+    toast.success("Négociation supprimée.");
     setDeleting(null);
     router.refresh();
   }
@@ -80,35 +88,35 @@ export function SocietesClient({ societes, profiles, userId }: SocietesClientPro
     <>
       <DataTable
         columns={columns}
-        data={societes}
-        searchPlaceholder="Rechercher une société..."
-        onRowClick={(societe) => openSociete(societe.id)}
-        screenKey="societes"
+        data={negociations}
+        searchPlaceholder="Rechercher une négociation..."
+        onRowClick={(negociation) => openNegociation(negociation.id)}
+        screenKey="negociations"
         userId={userId}
         toolbarActions={
           <Button size="sm" onClick={handleAdd}>
             <Plus className="size-4" />
-            Ajouter une société
+            Ajouter une négociation
           </Button>
         }
       />
 
-      <SocieteFormDialog
+      <NegociationFormDialog
         key={formKey}
         open={formOpen}
         onOpenChange={setFormOpen}
-        societe={editing}
-        profiles={profiles}
+        negociation={editing}
+        societes={societes}
+        programmes={programmes}
+        contacts={contacts}
         onSaved={() => router.refresh()}
       />
 
       <AlertDialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer « {deleting?.nom} » ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action est irréversible.
-            </AlertDialogDescription>
+            <AlertDialogTitle>Supprimer cette négociation ?</AlertDialogTitle>
+            <AlertDialogDescription>Cette action est irréversible.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleteLoading}>Annuler</AlertDialogCancel>

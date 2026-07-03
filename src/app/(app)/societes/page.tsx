@@ -4,6 +4,9 @@ import { SocietesClient } from "./societes-client";
 
 export default async function SocietesPage() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const [{ data: societes, error: societesError }, { data: profiles }] = await Promise.all([
     supabase
@@ -23,6 +26,7 @@ export default async function SocietesPage() {
       <SocietesClient
         societes={(societes ?? []) as unknown as SocieteWithRelations[]}
         profiles={(profiles ?? []) as Profile[]}
+        userId={user?.id}
       />
     </div>
   );
