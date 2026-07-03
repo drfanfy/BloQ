@@ -13,6 +13,7 @@ import {
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { StatutNegociationBadge } from "@/components/status-badge";
 import { SocieteLink } from "@/components/entity-panel/entity-link";
+import { useCanEdit } from "@/components/auth/edit-guard-button";
 import { contactFullName, type NegociationWithRelations } from "@/lib/types/database";
 
 const currencyFormatter = new Intl.NumberFormat("fr-FR", {
@@ -25,9 +26,50 @@ function formatMoney(value: number | null) {
   return value === null ? "—" : currencyFormatter.format(value);
 }
 
+function ActionsCell({
+  negociation,
+  onEdit,
+  onDelete,
+  onArchive,
+}: {
+  negociation: NegociationWithRelations;
+  onEdit: (negociation: NegociationWithRelations) => void;
+  onDelete: (negociation: NegociationWithRelations) => void;
+  onArchive: (negociation: NegociationWithRelations) => void;
+}) {
+  const canEdit = useCanEdit(negociation.created_by);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button variant="ghost" size="icon-sm">
+            <MoreHorizontal className="size-4" />
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem
+          disabled={!canEdit}
+          title={canEdit ? undefined : "Seul le créateur peut modifier cette fiche."}
+          onClick={() => onEdit(negociation)}
+        >
+          Modifier
+        </DropdownMenuItem>
+        {negociation.statut !== "archivee" && (
+          <DropdownMenuItem onClick={() => onArchive(negociation)}>Archiver</DropdownMenuItem>
+        )}
+        <DropdownMenuItem variant="destructive" onClick={() => onDelete(negociation)}>
+          Supprimer
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function getColumns(
   onEdit: (negociation: NegociationWithRelations) => void,
   onDelete: (negociation: NegociationWithRelations) => void,
+  onArchive: (negociation: NegociationWithRelations) => void,
 ): ColumnDef<NegociationWithRelations>[] {
   return [
     {
@@ -90,21 +132,12 @@ export function getColumns(
       header: () => <span className="sr-only">Actions</span>,
       enableHiding: false,
       cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button variant="ghost" size="icon-sm">
-                <MoreHorizontal className="size-4" />
-              </Button>
-            }
-          />
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit(row.original)}>Modifier</DropdownMenuItem>
-            <DropdownMenuItem variant="destructive" onClick={() => onDelete(row.original)}>
-              Supprimer
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <ActionsCell
+          negociation={row.original}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onArchive={onArchive}
+        />
       ),
     },
   ];

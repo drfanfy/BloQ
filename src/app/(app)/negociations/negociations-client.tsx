@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { useEntityPanel } from "@/components/entity-panel/entity-panel-context";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { Contact, NegociationWithRelations, Programme, Societe } from "@/lib/types/database";
 import { getColumns } from "./columns";
 import { NegociationFormDialog } from "./negociation-form-dialog";
@@ -45,6 +46,11 @@ export function NegociationsClient({
   const [editing, setEditing] = useState<NegociationWithRelations | null>(null);
   const [deleting, setDeleting] = useState<NegociationWithRelations | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+
+  const visibleNegociations = showArchived
+    ? negociations
+    : negociations.filter((n) => n.statut !== "archivee");
 
   function handleAdd() {
     setEditing(null);
@@ -82,22 +88,44 @@ export function NegociationsClient({
     router.refresh();
   }
 
-  const columns = getColumns(handleEdit, setDeleting);
+  async function handleArchive(negociation: NegociationWithRelations) {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("negociations")
+      .update({ statut: "archivee" })
+      .eq("id", negociation.id);
+
+    if (error) {
+      toast.error("Échec de l'archivage.", { description: error.message });
+      return;
+    }
+
+    toast.success("Négociation archivée.");
+    router.refresh();
+  }
+
+  const columns = getColumns(handleEdit, setDeleting, handleArchive);
 
   return (
     <>
       <DataTable
         columns={columns}
-        data={negociations}
+        data={visibleNegociations}
         searchPlaceholder="Rechercher une négociation..."
         onRowClick={(negociation) => openNegociation(negociation.id)}
         screenKey="negociations"
         userId={userId}
         toolbarActions={
-          <Button size="sm" onClick={handleAdd}>
-            <Plus className="size-4" />
-            Ajouter une négociation
-          </Button>
+          <>
+            <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Checkbox checked={showArchived} onCheckedChange={(v) => setShowArchived(v === true)} />
+              Afficher les archivées
+            </label>
+            <Button size="sm" onClick={handleAdd}>
+              <Plus className="size-4" />
+              Ajouter une négociation
+            </Button>
+          </>
         }
       />
 

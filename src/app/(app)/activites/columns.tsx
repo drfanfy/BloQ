@@ -13,7 +13,54 @@ import {
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { StatutActiviteBadge, TypeActiviteBadge } from "@/components/status-badge";
 import { ContactLink, SocieteLink } from "@/components/entity-panel/entity-link";
+import { useCurrentProfile } from "@/components/auth/current-profile-context";
 import { contactFullName, type ActiviteWithRelations } from "@/lib/types/database";
+
+function ActionsCell({
+  activite,
+  onEdit,
+  onDelete,
+  onComplete,
+}: {
+  activite: ActiviteWithRelations;
+  onEdit: (activite: ActiviteWithRelations) => void;
+  onDelete: (activite: ActiviteWithRelations) => void;
+  onComplete: (activite: ActiviteWithRelations) => void;
+}) {
+  const profile = useCurrentProfile();
+  const canEdit = !activite.responsable_id || !profile || activite.responsable_id === profile.id;
+
+  return (
+    <div className="flex items-center justify-end gap-1">
+      {activite.statut === "a_faire" && (
+        <Button variant="ghost" size="icon-sm" title="Marquer terminée" onClick={() => onComplete(activite)}>
+          <Check className="size-4" />
+        </Button>
+      )}
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button variant="ghost" size="icon-sm">
+              <MoreHorizontal className="size-4" />
+            </Button>
+          }
+        />
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            disabled={!canEdit}
+            title={canEdit ? undefined : "Seul le propriétaire peut modifier cette activité."}
+            onClick={() => onEdit(activite)}
+          >
+            Modifier
+          </DropdownMenuItem>
+          <DropdownMenuItem variant="destructive" onClick={() => onDelete(activite)}>
+            Supprimer
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
 
 export function getColumns(
   onEdit: (activite: ActiviteWithRelations) => void,
@@ -79,33 +126,12 @@ export function getColumns(
       header: () => <span className="sr-only">Actions</span>,
       enableHiding: false,
       cell: ({ row }) => (
-        <div className="flex items-center justify-end gap-1">
-          {row.original.statut === "a_faire" && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              title="Marquer terminée"
-              onClick={() => onComplete(row.original)}
-            >
-              <Check className="size-4" />
-            </Button>
-          )}
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button variant="ghost" size="icon-sm">
-                  <MoreHorizontal className="size-4" />
-                </Button>
-              }
-            />
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onEdit(row.original)}>Modifier</DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onClick={() => onDelete(row.original)}>
-                Supprimer
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <ActionsCell
+          activite={row.original}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onComplete={onComplete}
+        />
       ),
     },
   ];

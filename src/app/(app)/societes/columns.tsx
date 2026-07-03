@@ -12,7 +12,43 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { QualiteRelationBadge, StatutActeurBadge } from "@/components/status-badge";
+import { useCanEdit } from "@/components/auth/edit-guard-button";
 import type { SocieteWithRelations } from "@/lib/types/database";
+
+function ActionsCell({
+  societe,
+  onEdit,
+  onDelete,
+}: {
+  societe: SocieteWithRelations;
+  onEdit: (societe: SocieteWithRelations) => void;
+  onDelete: (societe: SocieteWithRelations) => void;
+}) {
+  const canEdit = useCanEdit(societe.created_by);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button variant="ghost" size="icon-sm">
+            <MoreHorizontal className="size-4" />
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem
+          disabled={!canEdit}
+          title={canEdit ? undefined : "Seul le créateur peut modifier cette fiche."}
+          onClick={() => onEdit(societe)}
+        >
+          Modifier
+        </DropdownMenuItem>
+        <DropdownMenuItem variant="destructive" onClick={() => onDelete(societe)}>
+          Supprimer
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export function getColumns(
   onEdit: (societe: SocieteWithRelations) => void,
@@ -70,26 +106,7 @@ export function getColumns(
       id: "actions",
       header: () => <span className="sr-only">Actions</span>,
       enableHiding: false,
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button variant="ghost" size="icon-sm">
-                <MoreHorizontal className="size-4" />
-              </Button>
-            }
-          />
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit(row.original)}>Modifier</DropdownMenuItem>
-            <DropdownMenuItem
-              variant="destructive"
-              onClick={() => onDelete(row.original)}
-            >
-              Supprimer
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
+      cell: ({ row }) => <ActionsCell societe={row.original} onEdit={onEdit} onDelete={onDelete} />,
     },
   ];
 }

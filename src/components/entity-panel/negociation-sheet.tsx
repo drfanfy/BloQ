@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, Pencil, Upload } from "lucide-react";
+import { Download, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { createClient } from "@/lib/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EditGuardButton } from "@/components/auth/edit-guard-button";
 import { StatutNegociationBadge } from "@/components/status-badge";
 import { NegociationFormDialog } from "@/app/(app)/negociations/negociation-form-dialog";
 import type {
@@ -192,10 +193,7 @@ export function NegociationSheet() {
                       <StatutNegociationBadge value={negociation.statut} />
                     </div>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
-                    <Pencil className="size-4" />
-                    Modifier
-                  </Button>
+                  <EditGuardButton createdBy={negociation.created_by} onClick={() => setEditOpen(true)} />
                 </div>
               </SheetHeader>
 

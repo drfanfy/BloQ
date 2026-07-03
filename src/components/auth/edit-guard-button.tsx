@@ -6,6 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCurrentProfile } from "./current-profile-context";
 
+export function useCanEdit(createdBy: string | null) {
+  const profile = useCurrentProfile();
+  return !createdBy || !profile || createdBy === profile.id;
+}
+
 interface EditGuardButtonProps {
   createdBy: string | null;
   creatorName?: string | null;
