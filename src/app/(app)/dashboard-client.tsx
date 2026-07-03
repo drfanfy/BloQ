@@ -13,10 +13,13 @@ import { SocieteLink } from "@/components/entity-panel/entity-link";
 import { useEntityPanel } from "@/components/entity-panel/entity-panel-context";
 import { ActiviteListItem } from "@/components/entity-panel/activite-list-item";
 import { ActiviteFormDialog } from "@/app/(app)/activites/activite-form-dialog";
+import { NegociationFormDialog } from "@/app/(app)/negociations/negociation-form-dialog";
 import type {
   ActiviteWithRelations,
   Contact,
   NegociationWithRelations,
+  Profile,
+  Programme,
   Societe,
 } from "@/lib/types/database";
 
@@ -26,6 +29,8 @@ interface DashboardClientProps {
   societes: Pick<Societe, "id" | "nom">[];
   contacts: Pick<Contact, "id" | "nom" | "prenom" | "societe_id">[];
   negociations: Pick<NegociationWithRelations, "id" | "societe_id">[];
+  profiles: Pick<Profile, "id" | "nom">[];
+  programmes: Pick<Programme, "id" | "nom">[];
 }
 
 export function DashboardClient({
@@ -34,11 +39,14 @@ export function DashboardClient({
   societes,
   contacts,
   negociations,
+  profiles,
+  programmes,
 }: DashboardClientProps) {
   const router = useRouter();
   const { openSociete, openContact } = useEntityPanel();
   const [items, setItems] = useState(activitesAFaire);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [quickNegociationOpen, setQuickNegociationOpen] = useState(false);
 
   useEffect(() => {
     setItems(activitesAFaire);
@@ -77,10 +85,16 @@ export function DashboardClient({
     <>
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-medium">Dashboard</h1>
-        <Button size="sm" onClick={() => setQuickAddOpen(true)}>
-          <Plus className="size-4" />
-          Nouvelle activité
-        </Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => setQuickAddOpen(true)}>
+            <Plus className="size-4" />
+            Activité
+          </Button>
+          <Button size="sm" onClick={() => setQuickNegociationOpen(true)}>
+            <Plus className="size-4" />
+            Négociation
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -153,6 +167,17 @@ export function DashboardClient({
         societes={societes}
         contacts={contacts}
         negociations={negociations}
+        profiles={profiles}
+        onSaved={() => router.refresh()}
+      />
+
+      <NegociationFormDialog
+        open={quickNegociationOpen}
+        onOpenChange={setQuickNegociationOpen}
+        negociation={null}
+        societes={societes}
+        programmes={programmes}
+        contacts={contacts}
         onSaved={() => router.refresh()}
       />
     </>

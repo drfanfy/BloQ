@@ -6,6 +6,8 @@ import type {
   ActiviteWithRelations,
   Contact,
   NegociationWithRelations,
+  Profile,
+  Programme,
   Societe,
 } from "@/lib/types/database";
 import { DashboardClient } from "./dashboard-client";
@@ -23,6 +25,8 @@ export default async function DashboardPage() {
     { data: societes },
     { data: contacts },
     { data: negociations },
+    { data: profiles },
+    { data: programmes },
   ] = await Promise.all([
     supabase.from("societes").select("*", { count: "exact", head: true }),
     supabase.from("contacts").select("*", { count: "exact", head: true }),
@@ -47,6 +51,8 @@ export default async function DashboardPage() {
     supabase.from("societes").select("id, nom").order("nom", { ascending: true }),
     supabase.from("contacts").select("id, nom, prenom, societe_id").order("nom", { ascending: true }),
     supabase.from("negociations").select("id, societe_id").order("created_at", { ascending: false }),
+    supabase.from("profiles").select("id, nom").order("nom", { ascending: true }),
+    supabase.from("programmes").select("id, nom").order("nom", { ascending: true }),
   ]);
 
   return (
@@ -64,6 +70,8 @@ export default async function DashboardPage() {
         societes={(societes ?? []) as Pick<Societe, "id" | "nom">[]}
         contacts={(contacts ?? []) as Pick<Contact, "id" | "nom" | "prenom" | "societe_id">[]}
         negociations={(negociations ?? []) as Pick<NegociationWithRelations, "id" | "societe_id">[]}
+        profiles={(profiles ?? []) as Pick<Profile, "id" | "nom">[]}
+        programmes={(programmes ?? []) as Pick<Programme, "id" | "nom">[]}
       />
     </div>
   );

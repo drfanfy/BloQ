@@ -3,6 +3,7 @@ import type {
   ActiviteWithRelations,
   Contact,
   NegociationWithRelations,
+  Profile,
   Societe,
 } from "@/lib/types/database";
 import { ActivitesClient } from "./activites-client";
@@ -18,6 +19,7 @@ export default async function ActivitesPage() {
     { data: societes },
     { data: contacts },
     { data: negociations },
+    { data: profiles },
   ] = await Promise.all([
     supabase
       .from("activites")
@@ -28,6 +30,7 @@ export default async function ActivitesPage() {
     supabase.from("societes").select("id, nom").order("nom", { ascending: true }),
     supabase.from("contacts").select("id, nom, prenom, societe_id").order("nom", { ascending: true }),
     supabase.from("negociations").select("id, societe_id").order("created_at", { ascending: false }),
+    supabase.from("profiles").select("id, nom").order("nom", { ascending: true }),
   ]);
 
   if (activitesError) {
@@ -42,6 +45,7 @@ export default async function ActivitesPage() {
         societes={(societes ?? []) as Pick<Societe, "id" | "nom">[]}
         contacts={(contacts ?? []) as Pick<Contact, "id" | "nom" | "prenom" | "societe_id">[]}
         negociations={(negociations ?? []) as Pick<NegociationWithRelations, "id" | "societe_id">[]}
+        profiles={(profiles ?? []) as Pick<Profile, "id" | "nom">[]}
         userId={user?.id}
       />
     </div>

@@ -22,6 +22,7 @@ import type {
   ActiviteWithRelations,
   Contact,
   NegociationWithRelations,
+  Profile,
   Societe,
 } from "@/lib/types/database";
 import { getColumns } from "./columns";
@@ -32,6 +33,7 @@ interface ActivitesClientProps {
   societes: Pick<Societe, "id" | "nom">[];
   contacts: Pick<Contact, "id" | "nom" | "prenom" | "societe_id">[];
   negociations: Pick<NegociationWithRelations, "id" | "societe_id">[];
+  profiles: Pick<Profile, "id" | "nom">[];
   userId?: string;
 }
 
@@ -40,6 +42,7 @@ export function ActivitesClient({
   societes,
   contacts,
   negociations,
+  profiles,
   userId,
 }: ActivitesClientProps) {
   const router = useRouter();
@@ -134,6 +137,7 @@ export function ActivitesClient({
         societes={societes}
         contacts={contacts}
         negociations={negociations}
+        profiles={profiles}
         onSaved={() => router.refresh()}
       />
 

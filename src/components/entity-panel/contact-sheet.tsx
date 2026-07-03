@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { Handshake, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { createClient } from "@/lib/supabase/client";
@@ -18,12 +18,14 @@ import {
 import { EditGuardButton } from "@/components/auth/edit-guard-button";
 import { TypeActiviteBadge, ContactPrioriteBadge } from "@/components/status-badge";
 import { ContactFormDialog } from "@/app/(app)/contacts/contact-form-dialog";
+import { NegociationFormDialog } from "@/app/(app)/negociations/negociation-form-dialog";
 import {
   contactFullName,
   type ActiviteWithRelations,
   type ContactReferentInterneWithProfile,
   type ContactWithRelations,
   type Profile,
+  type Programme,
   type Societe,
 } from "@/lib/types/database";
 import { useEntityPanel } from "./entity-panel-context";
@@ -42,7 +44,9 @@ export function ContactSheet() {
   const [referents, setReferents] = useState<ContactReferentInterneWithProfile[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [societeActivites, setSocieteActivites] = useState<ActiviteWithRelations[]>([]);
+  const [programmes, setProgrammes] = useState<Pick<Programme, "id" | "nom">[]>([]);
   const [editOpen, setEditOpen] = useState(false);
+  const [negociationFormOpen, setNegociationFormOpen] = useState(false);
   const [addingReferent, setAddingReferent] = useState(false);
   const [newReferentId, setNewReferentId] = useState("");
   const [referentLoading, setReferentLoading] = useState(false);
@@ -50,7 +54,7 @@ export function ContactSheet() {
   const load = useCallback(async (contactId: string) => {
     setLoading(true);
     const supabase = createClient();
-    const [{ data: c }, { data: a }, { data: s }, { data: r }, { data: p }] = await Promise.all([
+    const [{ data: c }, { data: a }, { data: s }, { data: r }, { data: p }, { data: prog }] = await Promise.all([
       supabase
         .from("contacts")
         .select("*, societe:societes(id, nom, groupe_id, groupe:groupes(id, nom))")
@@ -71,6 +75,7 @@ export function ContactSheet() {
         .is("date_fin", null)
         .order("date_debut", { ascending: false }),
       supabase.from("profiles").select("*").order("nom"),
+      supabase.from("programmes").select("id, nom").order("nom"),
     ]);
     const typedContact = (c as unknown as ContactWithRelations) ?? null;
     setContact(typedContact);
@@ -78,6 +83,7 @@ export function ContactSheet() {
     setSocietes((s ?? []) as Pick<Societe, "id" | "nom">[]);
     setReferents((r ?? []) as unknown as ContactReferentInterneWithProfile[]);
     setProfiles((p ?? []) as Profile[]);
+    setProgrammes((prog ?? []) as Pick<Programme, "id" | "nom">[]);
 
     if (typedContact?.societe_id) {
       const { data: sa } = await supabase
@@ -280,6 +286,18 @@ export function ContactSheet() {
                 )}
 
                 <section>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setNegociationFormOpen(true)}
+                  >
+                    <Handshake className="size-4" />
+                    Négociation
+                  </Button>
+                </section>
+
+                <section>
                   <h3 className="mb-2 text-sm font-medium">Activités ({activites.length})</h3>
                   <ActiviteQuickForm
                     societeId={contact.societe_id}
@@ -311,13 +329,25 @@ export function ContactSheet() {
       </Sheet>
 
       {contact && (
-        <ContactFormDialog
-          open={editOpen}
-          onOpenChange={setEditOpen}
-          contact={contact}
-          societes={societes}
-          onSaved={() => load(contact.id)}
-        />
+        <>
+          <ContactFormDialog
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            contact={contact}
+            societes={societes}
+            onSaved={() => load(contact.id)}
+          />
+          <NegociationFormDialog
+            open={negociationFormOpen}
+            onOpenChange={setNegociationFormOpen}
+            negociation={null}
+            societes={societes}
+            programmes={programmes}
+            contacts={[{ id: contact.id, nom: contact.nom, prenom: contact.prenom, societe_id: contact.societe_id }]}
+            defaultSocieteId={contact.societe_id ?? undefined}
+            onSaved={() => load(contact.id)}
+          />
+        </>
       )}
     </>
   );
