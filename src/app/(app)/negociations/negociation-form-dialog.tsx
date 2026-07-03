@@ -45,9 +45,9 @@ type FormState = {
   commentaire: string;
 };
 
-function toFormState(negociation: NegociationWithRelations | null): FormState {
+function toFormState(negociation: NegociationWithRelations | null, defaultSocieteId?: string): FormState {
   return {
-    societe_id: negociation?.societe_id ?? "",
+    societe_id: negociation?.societe_id ?? defaultSocieteId ?? "",
     programme_id: negociation?.programme_id ?? "",
     contact_id: negociation?.contact_id ?? "",
     statut: negociation?.statut ?? "en_cours",
@@ -65,6 +65,7 @@ interface NegociationFormDialogProps {
   societes: Pick<Societe, "id" | "nom">[];
   programmes: Pick<Programme, "id" | "nom">[];
   contacts: Pick<Contact, "id" | "nom" | "prenom" | "societe_id">[];
+  defaultSocieteId?: string;
   onSaved: () => void;
 }
 
@@ -75,9 +76,10 @@ export function NegociationFormDialog({
   societes,
   programmes,
   contacts,
+  defaultSocieteId,
   onSaved,
 }: NegociationFormDialogProps) {
-  const [form, setForm] = useState<FormState>(() => toFormState(negociation));
+  const [form, setForm] = useState<FormState>(() => toFormState(negociation, defaultSocieteId));
   const [loading, setLoading] = useState(false);
 
   const filteredContacts = form.societe_id

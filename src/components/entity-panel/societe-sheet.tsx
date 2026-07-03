@@ -1,23 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Pencil, Plus } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Download, Handshake, Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { createClient } from "@/lib/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EditGuardButton } from "@/components/auth/edit-guard-button";
 import { QualiteRelationBadge, StatutActeurBadge, StatutNegociationBadge } from "@/components/status-badge";
 import { SocieteFormDialog } from "@/app/(app)/societes/societe-form-dialog";
 import { ContactFormDialog } from "@/app/(app)/contacts/contact-form-dialog";
+import { NegociationFormDialog } from "@/app/(app)/negociations/negociation-form-dialog";
 import {
   contactFullName,
   type ActiviteWithRelations,
   type Contact,
+  type DocumentRow,
   type Groupe,
   type NegociationWithRelations,
   type Profile,
+  type Programme,
   type SocieteWithRelations,
 } from "@/lib/types/database";
 import { useEntityPanel } from "./entity-panel-context";
@@ -34,44 +38,58 @@ export function SocieteSheet() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [negociations, setNegociations] = useState<NegociationWithRelations[]>([]);
   const [activites, setActivites] = useState<ActiviteWithRelations[]>([]);
+  const [documents, setDocuments] = useState<DocumentRow[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [groupes, setGroupes] = useState<Groupe[]>([]);
+  const [programmes, setProgrammes] = useState<Pick<Programme, "id" | "nom">[]>([]);
   const [editOpen, setEditOpen] = useState(false);
   const [contactFormOpen, setContactFormOpen] = useState(false);
+  const [negociationFormOpen, setNegociationFormOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async (societeId: string) => {
     setLoading(true);
     const supabase = createClient();
-    const [{ data: s }, { data: c }, { data: n }, { data: a }, { data: p }, { data: g }] = await Promise.all([
-      supabase
-        .from("societes")
-        .select("*, qui_connait_profile:profiles!qui_connait(id, nom), groupe:groupes(id, nom)")
-        .eq("id", societeId)
-        .maybeSingle(),
-      supabase.from("contacts").select("*").eq("societe_id", societeId).order("nom"),
-      supabase
-        .from("negociations")
-        .select(
-          "*, societe:societes(id, nom), programme:programmes(id, nom), contact:contacts(id, nom, prenom), responsable:profiles!responsable_id(id, nom)",
-        )
-        .eq("societe_id", societeId)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("activites")
-        .select(
-          "*, societe:societes(id, nom), contact:contacts(id, nom, prenom), negociation:negociations(id), responsable:profiles(id, nom)",
-        )
-        .eq("societe_id", societeId)
-        .order("date_prevue", { ascending: false }),
-      supabase.from("profiles").select("*").order("nom"),
-      supabase.from("groupes").select("*").order("nom"),
-    ]);
+    const [{ data: s }, { data: c }, { data: n }, { data: a }, { data: docs }, { data: p }, { data: g }, { data: prog }] =
+      await Promise.all([
+        supabase
+          .from("societes")
+          .select("*, qui_connait_profile:profiles!qui_connait(id, nom), groupe:groupes(id, nom)")
+          .eq("id", societeId)
+          .maybeSingle(),
+        supabase.from("contacts").select("*").eq("societe_id", societeId).order("nom"),
+        supabase
+          .from("negociations")
+          .select(
+            "*, societe:societes(id, nom), programme:programmes(id, nom), contact:contacts(id, nom, prenom), responsable:profiles!responsable_id(id, nom)",
+          )
+          .eq("societe_id", societeId)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("activites")
+          .select(
+            "*, societe:societes(id, nom), contact:contacts(id, nom, prenom), negociation:negociations(id), responsable:profiles(id, nom)",
+          )
+          .eq("societe_id", societeId)
+          .order("date_prevue", { ascending: false }),
+        supabase
+          .from("documents")
+          .select("id, activite_id, negociation_id, societe_id, nom, storage_path, type_document, created_at")
+          .eq("societe_id", societeId)
+          .order("created_at", { ascending: false }),
+        supabase.from("profiles").select("*").order("nom"),
+        supabase.from("groupes").select("*").order("nom"),
+        supabase.from("programmes").select("id, nom").order("nom"),
+      ]);
     setSociete((s as unknown as SocieteWithRelations) ?? null);
     setContacts((c ?? []) as Contact[]);
     setNegociations((n ?? []) as unknown as NegociationWithRelations[]);
     setActivites((a ?? []) as unknown as ActiviteWithRelations[]);
+    setDocuments((docs ?? []) as DocumentRow[]);
     setProfiles((p ?? []) as Profile[]);
     setGroupes((g ?? []) as Groupe[]);
+    setProgrammes((prog ?? []) as Pick<Programme, "id" | "nom">[]);
     setLoading(false);
   }, []);
 
@@ -95,6 +113,60 @@ export function SocieteSheet() {
       );
     }
   }
+
+  async function handleFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !societe) return;
+
+    setUploading(true);
+    const supabase = createClient();
+    const path = `societe-${societe.id}/${crypto.randomUUID()}-${file.name}`;
+
+    const { error: uploadError } = await supabase.storage.from("veb-documents").upload(path, file);
+
+    if (uploadError) {
+      setUploading(false);
+      toast.error("Échec de l'upload.", { description: uploadError.message });
+      return;
+    }
+
+    const { data: doc, error: insertError } = await supabase
+      .from("documents")
+      .insert({ societe_id: societe.id, nom: file.name, storage_path: path, type_document: "document_societe" })
+      .select("id, activite_id, negociation_id, societe_id, nom, storage_path, type_document, created_at")
+      .single();
+
+    setUploading(false);
+
+    if (insertError || !doc) {
+      toast.error("Fichier téléversé mais échec de l'enregistrement.", { description: insertError?.message });
+      return;
+    }
+
+    toast.success("Document ajouté.");
+    setDocuments((prev) => [doc as DocumentRow, ...prev]);
+  }
+
+  async function handleDownload(doc: DocumentRow) {
+    const supabase = createClient();
+    const { data, error } = await supabase.storage.from("veb-documents").createSignedUrl(doc.storage_path, 60);
+
+    if (error || !data) {
+      toast.error("Impossible de générer le lien de téléchargement.", { description: error?.message });
+      return;
+    }
+
+    window.open(data.signedUrl, "_blank");
+  }
+
+  const hasStrategie =
+    societe &&
+    (societe.strategie_investissement ||
+      societe.strategie_produit ||
+      societe.strategie_financiere ||
+      societe.volumes_production ||
+      societe.process);
 
   return (
     <>
@@ -120,22 +192,24 @@ export function SocieteSheet() {
                       <QualiteRelationBadge value={societe.qualite_relation} />
                     </div>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
-                    <Pencil className="size-4" />
-                    Modifier
-                  </Button>
+                  <EditGuardButton createdBy={societe.created_by} onClick={() => setEditOpen(true)} />
                 </div>
               </SheetHeader>
 
               <div className="flex flex-col gap-6 px-4 pb-6">
+                <section className="flex gap-2">
+                  <Button size="sm" variant="outline" className="flex-1" onClick={() => setContactFormOpen(true)}>
+                    <Plus className="size-4" />
+                    Contact
+                  </Button>
+                  <Button size="sm" variant="outline" className="flex-1" onClick={() => setNegociationFormOpen(true)}>
+                    <Handshake className="size-4" />
+                    Négociation
+                  </Button>
+                </section>
+
                 <section>
-                  <div className="mb-2 flex items-center justify-between">
-                    <h3 className="text-sm font-medium">Contacts ({contacts.length})</h3>
-                    <Button size="sm" variant="ghost" onClick={() => setContactFormOpen(true)}>
-                      <Plus className="size-4" />
-                      Ajouter un contact
-                    </Button>
-                  </div>
+                  <h3 className="mb-2 text-sm font-medium">Contacts ({contacts.length})</h3>
                   {contacts.length === 0 ? (
                     <p className="text-sm text-muted-foreground">Aucun contact pour l&apos;instant.</p>
                   ) : (
@@ -170,6 +244,70 @@ export function SocieteSheet() {
                         >
                           <span className="font-medium">{negociation.programme?.nom || "Programme"}</span>
                           <StatutNegociationBadge value={negociation.statut} />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                {hasStrategie && (
+                  <section className="flex flex-col gap-2 rounded-lg border p-3 text-sm">
+                    <h3 className="text-sm font-medium">Stratégie & Process</h3>
+                    {societe.strategie_investissement && (
+                      <p>
+                        <span className="text-muted-foreground">Investissement — </span>
+                        {societe.strategie_investissement}
+                      </p>
+                    )}
+                    {societe.strategie_produit && (
+                      <p>
+                        <span className="text-muted-foreground">Produit — </span>
+                        {societe.strategie_produit}
+                      </p>
+                    )}
+                    {societe.strategie_financiere && (
+                      <p>
+                        <span className="text-muted-foreground">Financière — </span>
+                        {societe.strategie_financiere}
+                      </p>
+                    )}
+                    {societe.volumes_production && (
+                      <p>
+                        <span className="text-muted-foreground">Volumes — </span>
+                        {societe.volumes_production}
+                      </p>
+                    )}
+                    {societe.process && (
+                      <p>
+                        <span className="text-muted-foreground">Process — </span>
+                        {societe.process}
+                      </p>
+                    )}
+                  </section>
+                )}
+
+                <section>
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-sm font-medium">Documents ({documents.length})</h3>
+                    <Button size="sm" variant="ghost" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
+                      <Upload className="size-4" />
+                      {uploading ? "Envoi..." : "Ajouter"}
+                    </Button>
+                    <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelected} />
+                  </div>
+                  {documents.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Aucun document pour l&apos;instant.</p>
+                  ) : (
+                    <div className="flex flex-col divide-y">
+                      {documents.map((doc) => (
+                        <button
+                          key={doc.id}
+                          type="button"
+                          onClick={() => handleDownload(doc)}
+                          className="flex items-center justify-between py-2 text-left text-sm hover:text-primary"
+                        >
+                          <span className="truncate">{doc.nom}</span>
+                          <Download className="size-4 shrink-0 text-muted-foreground" />
                         </button>
                       ))}
                     </div>
@@ -221,6 +359,16 @@ export function SocieteSheet() {
             onOpenChange={setContactFormOpen}
             contact={null}
             societes={[{ id: societe.id, nom: societe.nom }]}
+            defaultSocieteId={societe.id}
+            onSaved={() => load(societe.id)}
+          />
+          <NegociationFormDialog
+            open={negociationFormOpen}
+            onOpenChange={setNegociationFormOpen}
+            negociation={null}
+            societes={[{ id: societe.id, nom: societe.nom }]}
+            programmes={programmes}
+            contacts={contacts.map((c) => ({ id: c.id, nom: c.nom, prenom: c.prenom, societe_id: c.societe_id }))}
             defaultSocieteId={societe.id}
             onSaved={() => load(societe.id)}
           />
