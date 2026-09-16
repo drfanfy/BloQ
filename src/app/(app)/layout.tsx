@@ -36,7 +36,7 @@ export default async function AppLayout({
       <div className="flex min-h-full flex-1">
         <aside className="flex w-60 shrink-0 flex-col border-r bg-muted/30">
           <div className="flex h-14 items-center border-b px-4">
-            <span className="font-heading text-sm font-semibold">CRM VEB</span>
+            <span className="font-heading text-sm font-semibold">BLOQ</span>
           </div>
           <div className="flex-1">
             <SidebarNav />
